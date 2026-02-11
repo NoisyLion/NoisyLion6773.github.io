@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<title>Mini Browser</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#tabs {
+  display: flex;
+  background: #222;
+  color: white;
+}
+
+.tab {
+  padding: 8px 14px;
+  cursor: pointer;
+  background: #333;
+  margin-right: 2px;
+}
+
+.tab.active {
+  background: #555;
+}
+
+#controls {
+  display: flex;
+  gap: 5px;
+  padding: 6px;
+  background: #eee;
+}
+
+#url {
+  flex: 1;
+  padding: 6px;
+}
+
+iframe {
+  flex: 1;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="tabs">
+  <div id="addTab" class="tab">＋</div>
+</div>
+
+<div id="controls">
+  <button onclick="back()">←</button>
+  <button onclick="forward()">→</button>
+  <button onclick="reload()">⟳</button>
+  <input id="url" placeholder="https://example.com" />
+  <button onclick="go()">Go</button>
+</div>
+
+<iframe id="view"></iframe>
+
+<script>
+let tabs = [];
+let current = null;
+
+function createTab(start="https://example.com") {
+  const tab = {
+    history: [start],
+    index: 0
+  };
+
+  tabs.push(tab);
+
+  const el = document.createElement("div");
+  el.className = "tab";
+  el.textContent = "Tab " + tabs.length;
+  el.onclick = () => switchTab(tab);
+
+  document.getElementById("tabs").insertBefore(el, addTab);
+
+  tab.el = el;
+
+  switchTab(tab);
+}
+
+function switchTab(tab) {
+  current = tab;
+
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  tab.el.classList.add("active");
+
+  load(tab.history[tab.index]);
+}
+
+function normalize(url){
+  if(!url.startsWith("http")) return "https://" + url;
+  return url;
+}
+
+function load(url){
+  url = normalize(url);
+  view.src = url;
+  urlInput.value = url;
+}
+
+function go(){
+  const url = normalize(urlInput.value);
+
+  current.history = current.history.slice(0, current.index+1);
+  current.history.push(url);
+  current.index++;
+
+  load(url);
+}
+
+function back(){
+  if(current.index > 0){
+    current.index--;
+    load(current.history[current.index]);
+  }
+}
+
+function forward(){
+  if(current.index < current.history.length-1){
+    current.index++;
+    load(current.history[current.index]);
+  }
+}
+
+function reload(){
+  load(current.history[current.index]);
+}
+
+const view = document.getElementById("view");
+const urlInput = document.getElementById("url");
+const addTab = document.getElementById("addTab");
+
+addTab.onclick = () => createTab();
+
+urlInput.addEventListener("keydown", e=>{
+  if(e.key === "Enter") go();
+});
+
+createTab("https://example.com");
+</script>
+
+</body>
+</html>
